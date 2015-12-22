@@ -1,7 +1,9 @@
-package Data::Dump;
+package Data::Dump::SortKeys;
+
+# VERSION
 
 use strict;
-use vars qw(@EXPORT @EXPORT_OK $VERSION $DEBUG);
+use vars qw(@EXPORT @EXPORT_OK $DEBUG);
 use subs qq(dump);
 
 require Exporter;
@@ -9,14 +11,15 @@ require Exporter;
 @EXPORT = qw(dd ddx);
 @EXPORT_OK = qw(dump pp dumpf quote);
 
-$VERSION = "1.23";
 $DEBUG = 0;
 
 use overload ();
-use vars qw(%seen %refcnt @dump @fixup %require $TRY_BASE64 @FILTERS $INDENT);
+use vars qw(%seen %refcnt @dump @fixup %require $TRY_BASE64 @FILTERS $INDENT $SORT_KEYS);
 
 $TRY_BASE64 = 50 unless defined $TRY_BASE64;
 $INDENT = "  " unless defined $INDENT;
+
+$SORT_KEYS = undef;
 
 sub dump
 {
@@ -293,17 +296,22 @@ sub _dump
 	if ($hide_keys) {
 	    @orig_keys = grep !$hide_keys->($_), @orig_keys;
 	}
-	my $text_keys = 0;
-	for (@orig_keys) {
-	    $text_keys++, last unless /^[-+]?(?:0|[1-9]\d*)(?:\.\d+)?\z/;
-	}
+	if (defined $SORT_KEYS) {
+            @orig_keys = $SORT_KEYS->(\@orig_keys, $rval);
+        }
+        else {
+            my $text_keys = 0;
+            for (@orig_keys) {
+                $text_keys++, last unless /^[-+]?(?:0|[1-9]\d*)(?:\.\d+)?\z/;
+            }
 
-	if ($text_keys) {
-	    @orig_keys = sort { lc($a) cmp lc($b) } @orig_keys;
-	}
-	else {
-	    @orig_keys = sort { $a <=> $b } @orig_keys;
-	}
+            if ($text_keys) {
+                @orig_keys = sort { lc($a) cmp lc($b) } @orig_keys;
+            }
+            else {
+                @orig_keys = sort { $a <=> $b } @orig_keys;
+            }
+        }
 
 	my $quote;
 	for my $key (@orig_keys) {
@@ -551,23 +559,33 @@ sub quote {
 
 1;
 
+# ABSTRACT: Data::Dump but lets you custom sort hash keys
+
 __END__
-
-=head1 NAME
-
-Data::Dump - Pretty printing of data structures
 
 =head1 SYNOPSIS
 
- use Data::Dump qw(dump);
+ use Data::Dump::SortKeys qw(dump);
+
+ my $sorter = do {
+     require Sort::ByExample;
+     Sort::ByExample::sbe(["foo", "bar", "baz"]);
+ };
+
+ $Data::Dump::SortKeys = sub {
+     my ($keys, $object_ref) = @_;
+     $sorter->(@$keys);
+ };
 
  $str = dump(@list);
  @copy_of_list = eval $str;
 
  # or use it for easy debug printout
- use Data::Dump; dd localtime;
+ use Data::Dump::SortKeys; dd localtime;
 
 =head1 DESCRIPTION
+
+B<An experimental fork of Data::Dump 1.23 which lets you custom sort hash keys.>
 
 This module provide a few functions that traverse their
 argument and produces a string as its result.  The string contains
@@ -673,6 +691,11 @@ be valid Perl.
 How long must a binary string be before we try to use the base64 encoding
 for the dump output.  The default is 50.  Set it to 0 to disable base64 dumps.
 
+=item $Data::Dump::SORT_KEYS
+
+A custom hook which is called with ($keys, $object_ref) when dumping a hash, to
+get the sorted hash keys.
+
 =back
 
 
@@ -706,7 +729,7 @@ returns C<'(1, 2, 3)'>.
 L<Data::Dump::Filtered>, L<Data::Dump::Trace>, L<Data::Dumper>, L<JSON>,
 L<Storable>
 
-=head1 AUTHORS
+=head1 Data::Dump AUTHORS
 
 The C<Data::Dump> module is written by Gisle Aas <gisle@aas.no>, based
 on C<Data::Dumper> by Gurusamy Sarathy <gsar@umich.edu>.

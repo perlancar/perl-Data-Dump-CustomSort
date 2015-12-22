@@ -1,5 +1,13 @@
 Revision history for Data-Dump-SortKeys
 
+0.02    2015-12-23 (PERLANCAR)
+
+	- No functional changes.
+
+	- [doc] Mention RT ticket which suggests addition of custom sort
+	  keys feature to Data::Dump.
+
+
 0.01     2015-12-23 (PERLANCAR)
 
          - First release.

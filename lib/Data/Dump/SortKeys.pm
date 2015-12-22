@@ -731,6 +731,8 @@ returns C<'(1, 2, 3)'>.
 L<Data::Dump::Filtered>, L<Data::Dump::Trace>, L<Data::Dumper>, L<JSON>,
 L<Storable>
 
+L<https://rt.cpan.org/Public/Bug/Display.html?id=110515>
+
 =head1 Data::Dump AUTHORS
 
 The C<Data::Dump> module is written by Gisle Aas <gisle@aas.no>, based

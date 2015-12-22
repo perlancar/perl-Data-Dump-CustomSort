@@ -563,6 +563,8 @@ sub quote {
 
 __END__
 
+=for Pod::Coverage ^(.+)$
+
 =head1 SYNOPSIS
 
  use Data::Dump::SortKeys qw(dump);

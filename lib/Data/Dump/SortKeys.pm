@@ -297,7 +297,7 @@ sub _dump
 	    @orig_keys = grep !$hide_keys->($_), @orig_keys;
 	}
 	if (defined $SORT_KEYS) {
-            @orig_keys = $SORT_KEYS->(\@orig_keys, $rval);
+            @orig_keys = $SORT_KEYS->($rval);
         }
         else {
             my $text_keys = 0;
@@ -574,9 +574,9 @@ __END__
      Sort::ByExample::sbe(["foo", "bar", "baz"]);
  };
 
- $Data::Dump::SortKeys = sub {
-     my ($keys, $object_ref) = @_;
-     $sorter->(@$keys);
+ $Data::Dump::SortKeys::SORT_KEYS = sub {
+     my $hash = shift;
+     $sorter->(keys %$hash);
  };
 
  $str = dump(@list);
@@ -681,22 +681,22 @@ these.
 
 =over
 
-=item $Data::Dump::INDENT
+=item $Data::Dump::SortKeys::INDENT
 
 This holds the string that's used for indenting multiline data structures.
 It's default value is "  " (two spaces).  Set it to "" to suppress indentation.
 Setting it to "| " makes for nice visuals even if the dump output then fails to
 be valid Perl.
 
-=item $Data::Dump::TRY_BASE64
+=item $Data::Dump::SortKeys::TRY_BASE64
 
 How long must a binary string be before we try to use the base64 encoding
 for the dump output.  The default is 50.  Set it to 0 to disable base64 dumps.
 
-=item $Data::Dump::SORT_KEYS
+=item $Data::Dump::SortKeys::SORT_KEYS
 
-A custom hook which is called with ($keys, $object_ref) when dumping a hash, to
-get the sorted hash keys.
+A custom hook which is called with ($hashref) when dumping a hash, to get the
+sorted hash keys. It should return a list containing the sorted keys.
 
 =back
 

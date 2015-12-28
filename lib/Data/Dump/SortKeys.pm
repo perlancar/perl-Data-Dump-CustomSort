@@ -14,12 +14,14 @@ require Exporter;
 $DEBUG = 0;
 
 use overload ();
-use vars qw(%seen %refcnt @dump @fixup %require $TRY_BASE64 @FILTERS $INDENT $SORT_KEYS);
+use vars qw(%seen %refcnt @dump @fixup %require $TRY_BASE64 @FILTERS $INDENT $SORT_KEYS $REMOVE_PRAGMAS);
 
 $TRY_BASE64 = 50 unless defined $TRY_BASE64;
 $INDENT = "  " unless defined $INDENT;
 
 $SORT_KEYS = undef;
+
+$REMOVE_PRAGMAS = 0;
 
 sub dump
 {
@@ -373,7 +375,7 @@ sub _dump
 	$out .= "}";
     }
     elsif ($type eq "CODE") {
-	$out = 'sub { ... }';
+	$out = code($rval);
     }
     elsif ($type eq "VSTRING") {
         $out = sprintf +($ref ? '\v%vd' : 'v%vd'), $$rval;
@@ -484,6 +486,41 @@ sub format_list
     }
 }
 
+my $deparse;
+sub code {
+    my $code = shift;
+    unless ($deparse) {
+        require B::Deparse;
+        $deparse = B::Deparse->new("-l"); # -i option doesn't have any effect?
+    }
+
+    my $res = $deparse->coderef2text($code);
+
+    my ($res_before_first_line, $res_after_first_line) =
+        $res =~ /(.+?)^(#line .+)/ms;
+
+    if ($REMOVE_PRAGMAS) {
+        $res_before_first_line = "{\n";
+    #} elsif ($PERL_VERSION < 5.016) {
+    #    # older perls' feature.pm doesn't yet support q{no feature ':all';}
+    #    # so we replace it with q{no feature}.
+    #    $res_before_first_line =~ s/no feature ':all';/no feature;/m;
+    }
+    $res_after_first_line =~ s/^#line .+\n//gm;
+
+    $res = "sub " . $res_before_first_line . $res_after_first_line;
+
+    if (length($res) <= 60) {
+        $res =~ s/^ +//gm;
+        $res =~ s/\n+/ /g;
+        $res =~ s/;\s+\}\z/ }/;
+    } else {
+        $res =~ s/^ +/$INDENT/gm;
+    }
+
+    $res;
+}
+
 sub str {
   if (length($_[0]) > 20) {
       for ($_[0]) {
@@ -587,7 +624,8 @@ __END__
 
 =head1 DESCRIPTION
 
-B<An experimental fork of Data::Dump 1.23 which lets you custom sort hash keys.>
+B<An experimental fork of Data::Dump 1.23 which lets you custom sort hash keys
+and dump coderefs.>
 
 This module provide a few functions that traverse their
 argument and produces a string as its result.  The string contains
@@ -697,6 +735,22 @@ for the dump output.  The default is 50.  Set it to 0 to disable base64 dumps.
 
 A custom hook which is called with ($hashref) when dumping a hash, to get the
 sorted hash keys. It should return a list containing the sorted keys.
+
+=item $Data::Dump::SortKeys::REMOVE_PRAGMAS
+
+If set to 1, then pragmas at the start of coderef dump will be removed. Coderef
+dump is produced by L<B::Deparse> and is of the form like:
+
+ sub { use feature 'current_sub', 'evalbytes', 'fc', 'say', 'state', 'switch', 'unicode_strings', 'unicode_eval'; $a <=> $b }
+
+If you want to dump short coderefs, the pragmas might be distracting. You can
+turn turn on this option which will make the above dump become:
+
+ sub { $a <=> $b }
+
+Note that without the pragmas, the dump might be incorrect.
+
+
 
 =back
 

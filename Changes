@@ -1,17 +1,17 @@
-0.04    2015-12-28 (PERLANCAR)
+0.04    2015-12-28  Released-By: PERLANCAR
 
         - Implement coderef dumping and add option $REMOVE_PRAGMAS, like in
           Data::Dmp.
 
 
-0.03    2015-12-23 (PERLANCAR)
+0.03    2015-12-23  Released-By: PERLANCAR
 
 	- [Incompatible change] To simplify interface, $SORT_KEYS hook
 	  accepts just the original hashref, instead of arrayref of keys +
 	  hashref.
 
 
-0.02    2015-12-23 (PERLANCAR)
+0.02    2015-12-23  Released-By: PERLANCAR
 
 	- No functional changes.
 
@@ -19,6 +19,6 @@
 	  keys feature to Data::Dump.
 
 
-0.01     2015-12-23 (PERLANCAR)
+0.01     2015-12-23  Released-By: PERLANCAR
 
          - First release.
